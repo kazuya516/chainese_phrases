@@ -5,23 +5,31 @@
 <title>中国語ミニ会話帳</title>
 <style>
   :root { --radius: 12px; }
-  body{font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP",sans-serif;margin:16px;line-height:1.45}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP",sans-serif;margin:16px;line-height:1.45}
   h1{font-size:20px;margin:0 0 10px}
   .hint{font-size:12px;opacity:.75;margin-bottom:12px}
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 12px}
   input[type="search"]{flex:1;padding:10px;font-size:15px;border:1px solid #ddd;border-radius:12px}
-  select,button{font-size:14px}
+  select,button,label{font-size:14px}
   .cats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
   .chip{padding:8px 12px;border:1px solid #ddd;border-radius:999px;background:#fff;cursor:pointer}
   .chip.active{background:#efefef}
   .card{border:1px solid #e5e5e5;border-radius:12px;padding:12px;margin:8px 0}
   .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-  .zh{font-size:18px;font-weight:700}
+  .zh{font-size:18px;font-weight:700;cursor:pointer}
   .py{font-size:13px;opacity:.7}
   .jaen{font-size:13px;opacity:.85;margin-top:4px}
   .controls{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
   .btn{padding:8px 10px;border:1px solid #ccc;background:#fff;border-radius:8px;cursor:pointer}
   .footer{margin-top:20px;font-size:12px;opacity:.7}
+
+  /* 学習モード（訳を隠す） */
+  .study .jaen{display:none}
+  /* 学習モードの時だけ「チラ見せ」ボタンを出す */
+  .peek{display:none}
+  .study .peek{display:inline-block}
+  /* チラ見せ中のカードは訳を表示 */
+  .card.show .jaen{display:block}
 </style>
 <h1>中国語ミニ会話帳（タップで再生）</h1>
 <div class="hint">iPhoneなら<strong>共有</strong>→<strong>ホーム画面に追加</strong>でアプリ風に使えます。</div>
@@ -34,6 +42,7 @@
     <option value="1.0" selected>普通</option>
     <option value="1.2">少し速く</option>
   </select>
+  <label><input type="checkbox" id="toggleTrans" checked> 訳を表示</label>
 </div>
 
 <div class="cats" id="cats"></div>
@@ -52,6 +61,7 @@ const PHRASES = [
   {c:"挨拶", zh:"不好意思", py:"Bù hǎoyìsi", ja:"すみません（呼びかけ）", en:"Excuse me"},
   {c:"挨拶", zh:"对不起", py:"Duìbùqǐ", ja:"ごめんなさい", en:"Sorry"},
   {c:"挨拶", zh:"没关系", py:"Méiguānxi", ja:"大丈夫です／気にしないで", en:"It's okay"},
+
   {c:"道を聞く", zh:"请问", py:"Qǐngwèn", ja:"すみません、伺いますが…", en:"May I ask…"},
   {c:"道を聞く", zh:"厕所在哪里？", py:"Cèsuǒ zài nǎli?", ja:"トイレはどこですか？", en:"Where is the toilet?"},
   {c:"道を聞く", zh:"这个地方在哪儿？", py:"Zhège dìfang zài nǎr?", ja:"この場所はどこですか？", en:"Where is this place?"},
@@ -59,45 +69,51 @@ const PHRASES = [
   {c:"道を聞く", zh:"我听不懂", py:"Wǒ tīng bù dǒng", ja:"わかりません", en:"I don't understand."},
   {c:"道を聞く", zh:"可以再说一遍吗？", py:"Kěyǐ zài shuō yí biàn ma?", ja:"もう一度言ってもらえますか？", en:"Could you say it again?"},
   {c:"道を聞く", zh:"你会说英语吗？", py:"Nǐ huì shuō Yīngyǔ ma?", ja:"英語は話せますか？", en:"Do you speak English?"},
+
   {c:"買い物", zh:"这个多少钱？", py:"Zhège duōshao qián?", ja:"これはいくらですか？", en:"How much is this?"},
   {c:"買い物", zh:"可以便宜一点吗？", py:"Kěyǐ piányi yìdiǎn ma?", ja:"もう少し安くできますか？", en:"Can it be cheaper?"},
   {c:"買い物", zh:"我要这个", py:"Wǒ yào zhège", ja:"これをください", en:"I want this."},
   {c:"買い物", zh:"可以试试吗？", py:"Kěyǐ shìshi ma?", ja:"試着できますか？", en:"May I try it on?"},
   {c:"買い物", zh:"可以刷卡吗？", py:"Kěyǐ shuākǎ ma?", ja:"カード使えますか？", en:"Can I use a card?"},
   {c:"買い物", zh:"收据可以给我吗？", py:"Shōujù kěyǐ gěi wǒ ma?", ja:"レシートをもらえますか？", en:"May I have a receipt?"},
+
   {c:"食事", zh:"请给我菜单", py:"Qǐng gěi wǒ càidān", ja:"メニューをください", en:"Menu, please."},
   {c:"食事", zh:"有推荐吗？", py:"Yǒu tuījiàn ma?", ja:"おすすめはありますか？", en:"Any recommendations?"},
   {c:"食事", zh:"不要太辣", py:"Bú yào tài là", ja:"辛すぎないようにしてください", en:"Not too spicy, please."},
   {c:"食事", zh:"不要香菜", py:"Bú yào xiāngcài", ja:"パクチー抜きで", en:"No cilantro, please."},
   {c:"食事", zh:"打包可以吗？", py:"Dǎbāo kěyǐ ma?", ja:"持ち帰りできますか？", en:"Can I take it to go?"},
   {c:"食事", zh:"买单，谢谢", py:"Mǎidān, xièxie", ja:"お会計お願いします", en:"Check, please."},
+
   {c:"交通", zh:"到机场怎么走？", py:"Dào jīchǎng zěnme zǒu?", ja:"空港へはどう行きますか？", en:"How do I get to the airport?"},
   {c:"交通", zh:"请帮我叫一辆出租车", py:"Qǐng bāng wǒ jiào yí liàng chūzūchē", ja:"タクシーを呼んでください", en:"Please call a taxi for me."},
   {c:"交通", zh:"到北京站多少钱？", py:"Dào Běijīng zhàn duōshao qián?", ja:"北京駅までいくらですか？", en:"How much to Beijing Station?"},
   {c:"交通", zh:"这一站下车吗？", py:"Zhè yí zhàn xiàchē ma?", ja:"この駅で降りますか？", en:"Do we get off at this stop?"},
   {c:"交通", zh:"请在这里停", py:"Qǐng zài zhèlǐ tíng", ja:"ここで止めてください", en:"Please stop here."},
   {c:"交通", zh:"借过一下", py:"Jièguò yíxià", ja:"通してください（人混み）", en:"Excuse me (let me pass)."},
+
   {c:"ホテル", zh:"我有预订", py:"Wǒ yǒu yùdìng", ja:"予約しています", en:"I have a reservation."},
   {c:"ホテル", zh:"护照在这里", py:"Hùzhào zài zhèlǐ", ja:"パスポートはこちらです", en:"Here is my passport."},
   {c:"ホテル", zh:"可以延迟退房吗？", py:"Kěyǐ yánchí tuìfáng ma?", ja:"レイトチェックアウトできますか？", en:"Can I have a late checkout?"},
   {c:"ホテル", zh:"有更安静的房间吗？", py:"Yǒu gèng ānjìng de fángjiān ma?", ja:"もっと静かな部屋はありますか？", en:"Do you have a quieter room?"},
+
   {c:"緊急", zh:"我需要帮助", py:"Wǒ xūyào bāngzhù", ja:"助けが必要です", en:"I need help."},
   {c:"緊急", zh:"我迷路了", py:"Wǒ mílù le", ja:"道に迷いました", en:"I'm lost."},
   {c:"緊急", zh:"请报警", py:"Qǐng bàojǐng", ja:"警察を呼んでください", en:"Call the police, please."},
   {c:"緊急", zh:"请叫救护车", py:"Qǐng jiào jiùhùchē", ja:"救急車を呼んでください", en:"Call an ambulance, please."},
 ];
 
-const list=document.getElementById('list');
-const catsDiv=document.getElementById('cats');
-const q=document.getElementById('q');
-const voiceSel=document.getElementById('voiceSel');
-const rateSel=document.getElementById('rateSel');
+const list = document.getElementById('list');
+const catsDiv = document.getElementById('cats');
+const q = document.getElementById('q');
+const voiceSel = document.getElementById('voiceSel');
+const rateSel = document.getElementById('rateSel');
+const toggleTrans = document.getElementById('toggleTrans');
 
-const CATS=["すべて",...Array.from(new Set(PHRASES.map(p=>p.c)))];
-let activeCat="すべて";
+const CATS = ["すべて", ...Array.from(new Set(PHRASES.map(p=>p.c)))];
+let activeCat = "すべて";
 
 function renderCats(){
-  catsDiv.innerHTML="";
+  catsDiv.innerHTML = "";
   CATS.forEach(cat=>{
     const b=document.createElement('button');
     b.className='chip'+(cat===activeCat?' active':'');
@@ -108,35 +124,37 @@ function renderCats(){
 }
 
 function render(){
-  const keyword=q.value.trim().toLowerCase();
-  list.innerHTML="";
+  const keyword = q.value.trim().toLowerCase();
+  list.innerHTML = "";
   PHRASES.filter(p=>activeCat==="すべて"||p.c===activeCat)
     .filter(p=>!keyword||[p.zh,p.py,p.ja,p.en].join(" ").toLowerCase().includes(keyword))
-    .forEach(p=>{
+    .forEach((p,idx)=>{
       const div=document.createElement('div');
       div.className='card';
+      div.id = `card-${idx}`;
       div.innerHTML=`
         <div class="row">
-          <div class="zh">${p.zh}</div>
+          <div class="zh" onclick="peek(${idx})">${p.zh}</div>
           <div class="py">${p.py}</div>
         </div>
         <div class="jaen">${p.ja} / ${p.en}</div>
         <div class="controls">
           <button class="btn" onclick="speak('${p.zh.replace(/'/g,"\\'")}')">再生</button>
           <button class="btn" onclick="speak('${p.zh.replace(/'/g,"\\'")}', true)">ゆっくり</button>
+          <button class="btn peek" onclick="peek(${idx})">チラ見せ</button>
         </div>`;
       list.appendChild(div);
     });
 }
 
 function pickChineseVoices(){
-  const vs=speechSynthesis.getVoices();
-  const zh=vs.filter(v=>/zh/i.test(v.lang));
-  return zh.length?zh:vs;
+  const vs = speechSynthesis.getVoices();
+  const zh = vs.filter(v=>/zh/i.test(v.lang));
+  return zh.length ? zh : vs;
 }
 function populateVoiceSelector(){
-  const vs=pickChineseVoices();
-  voiceSel.innerHTML='<option value="">音声を自動選択</option>';
+  const vs = pickChineseVoices();
+  voiceSel.innerHTML = '<option value="">音声を自動選択</option>';
   vs.forEach(v=>{
     const opt=document.createElement('option');
     opt.value=v.name; opt.textContent=`${v.name} (${v.lang})`;
@@ -144,23 +162,49 @@ function populateVoiceSelector(){
   });
 }
 function findSelectedVoice(){
-  const name=voiceSel.value;
+  const name = voiceSel.value;
   if(!name) return null;
-  const vs=speechSynthesis.getVoices();
-  return vs.find(v=>v.name===name)||null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v=>v.name===name) || null;
 }
-function speak(text,slow=false){
+function speak(text, slow=false){
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text);
-  u.lang='zh-CN';
-  const v=findSelectedVoice()||pickChineseVoices()[0];
-  if(v) u.voice=v;
-  const rateMap={"0.8":0.8,"1.0":1.0,"1.2":1.2};
-  u.rate= slow?0.8:(rateMap[rateSel.value]||1.0);
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  const v = findSelectedVoice() || pickChineseVoices()[0];
+  if(v) u.voice = v;
+  const rateMap = {"0.8":0.8,"1.0":1.0,"1.2":1.2};
+  u.rate = slow ? 0.8 : (rateMap[rateSel.value] || 1.0);
   speechSynthesis.speak(u);
 }
 
-q.addEventListener('input',render);
+// その行だけ3秒表示
+const peekTimers = {};
+function peek(idx){
+  const el = document.getElementById(`card-${idx}`);
+  if(!el) return;
+  el.classList.add('show');
+  clearTimeout(peekTimers[idx]);
+  peekTimers[idx] = setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+// 検索
+q.addEventListener('input', render);
+
+// 訳の表示/非表示（ローカル保存 & 学習モード切替）
+const savedPref = localStorage.getItem('showTrans');
+if(savedPref !== null){
+  const on = savedPref === 'true';
+  toggleTrans.checked = on;
+  document.body.classList.toggle('study', !on);
+}
+toggleTrans.addEventListener('change', () => {
+  const on = toggleTrans.checked;
+  document.body.classList.toggle('study', !on);
+  localStorage.setItem('showTrans', String(on));
+});
+
+// 初期描画
 renderCats(); render();
 if(typeof speechSynthesis!=='undefined'){ populateVoiceSelector(); speechSynthesis.onvoiceschanged=populateVoiceSelector; }
 </script>
