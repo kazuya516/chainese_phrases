@@ -50,7 +50,9 @@
 <div class="footer">Powered by Web Speech API / zh-CN voice.（端末の音声に依存します）</div>
 
 <script>
-const PHRASES = [
+<script>
+/* 1) もともとのフレーズ（ベース） */
+const BASE_PHRASES = [
   {c:"挨拶", zh:"你好", py:"Nǐ hǎo", ja:"こんにちは", en:"Hello"},
   {c:"挨拶", zh:"早上好", py:"Zǎoshang hǎo", ja:"おはよう", en:"Good morning"},
   {c:"挨拶", zh:"晚上好", py:"Wǎnshang hǎo", ja:"こんばんは", en:"Good evening"},
@@ -102,6 +104,172 @@ const PHRASES = [
   {c:"緊急", zh:"请叫救护车", py:"Qǐng jiào jiùhùchē", ja:"救急車を呼んでください", en:"Call an ambulance, please."},
 ];
 
+/* 2) 追加CSVを読み込んでマージ（重複除外） */
+async function loadExtraCSV(path='phrases_extra.csv'){
+  try{
+    const res = await fetch(path, {cache:'no-store'});
+    if(!res.ok) return [];                      // ないときは空
+    const text = await res.text();
+
+    // シンプルCSVパーサ（カンマをクォートで考慮）
+    const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter(l=>l.trim()!=='');
+    const splitCSV = (line)=> line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(s=>{
+      s=s.trim();
+      if(s.startsWith('"')&&s.endsWith('"')) s=s.slice(1,-1).replace(/""/g,'"');
+      return s;
+    });
+
+    const header = splitCSV(lines[0]);
+    const H = (name)=> header.findIndex(h=>h.replace(/\s/g,'')===name.replace(/\s/g,'')); // 列名一致
+    let idxCat=H('カテゴリ'), idxZh=H('中国語'), idxPy=H('ピンイン'), idxJa=H('日本語'), idxEn=H('英語');
+
+    // 番号列などでズレている場合のフォールバック
+    if(idxZh<0||idxPy<0||idxJa<0||idxEn<0){
+      // 末尾4列を 中国語/ピンイン/日本語/英語 とみなす
+      idxZh = header.length-4; idxPy = header.length-3; idxJa = header.length-2; idxEn = header.length-1;
+      if(idxCat<0) idxCat = -1; // なければ後で"追加"
+    }
+
+    const rows = lines.slice(1).map(splitCSV).map(cols=>{
+      const c  = idxCat>=0 ? (cols[idxCat]||'追加') : '追加';
+      const zh = cols[idxZh]||'';
+      const py = cols[idxPy]||'';
+      const ja = cols[idxJa]||'';
+      const en = cols[idxEn]||'';
+      return zh ? {c, zh, py, ja, en} : null;
+    }).filter(Boolean);
+
+    return rows;
+  }catch(e){
+    console.warn('CSV load error', e);
+    return [];
+  }
+}
+
+function mergeAndDedupe(base, extra){
+  const out=[], seen=new Set();
+  [...base, ...extra].forEach(p=>{
+    const key = (p.zh||'') + '|' + (p.py||'');
+    if(seen.has(key)) return;
+    seen.add(key); out.push(p);
+  });
+  return out;
+}
+
+/* 3) UI（既存のまま） */
+const list = document.getElementById('list');
+const catsDiv = document.getElementById('cats');
+const q = document.getElementById('q');
+const voiceSel = document.getElementById('voiceSel');
+const rateSel = document.getElementById('rateSel');
+const toggleTrans = document.getElementById('toggleTrans');
+
+let PHRASES = [];                 // ←最終的なマージ結果
+let CATS = ["すべて"];
+let activeCat = "すべて";
+
+function renderCats(){
+  CATS = ["すべて", ...Array.from(new Set(PHRASES.map(p=>p.c)))];
+  catsDiv.innerHTML = "";
+  CATS.forEach(cat=>{
+    const b=document.createElement('button');
+    b.className='chip'+(cat===activeCat?' active':'');
+    b.textContent=cat;
+    b.onclick=()=>{activeCat=cat;render();};
+    catsDiv.appendChild(b);
+  });
+}
+
+function render(){
+  const keyword = q.value.trim().toLowerCase();
+  list.innerHTML = "";
+  PHRASES.filter(p=>activeCat==="すべて"||p.c===activeCat)
+    .filter(p=>!keyword||[p.zh,p.py,p.ja,p.en].join(" ").toLowerCase().includes(keyword))
+    .forEach((p,idx)=>{
+      const div=document.createElement('div');
+      div.className='card';
+      div.id = `card-${idx}`;
+      div.innerHTML=`
+        <div class="row">
+          <div class="zh" onclick="peek(${idx})">${p.zh}</div>
+          <div class="py">${p.py}</div>
+        </div>
+        <div class="jaen">${p.ja} / ${p.en}</div>
+        <div class="controls">
+          <button class="btn" onclick="speak('${p.zh.replace(/'/g,"\\'")}')">再生</button>
+          <button class="btn" onclick="speak('${p.zh.replace(/'/g,"\\'")}', true)">ゆっくり</button>
+          <button class="btn peek" onclick="peek(${idx})">訳を見る</button>
+        </div>`;
+      list.appendChild(div);
+    });
+}
+
+function pickChineseVoices(){
+  const vs = speechSynthesis.getVoices();
+  const zh = vs.filter(v=>/zh/i.test(v.lang));
+  return zh.length ? zh : vs;
+}
+function populateVoiceSelector(){
+  const vs = pickChineseVoices();
+  voiceSel.innerHTML = '<option value="">音声を自動選択</option>';
+  vs.forEach(v=>{
+    const opt=document.createElement('option');
+    opt.value=v.name; opt.textContent=`${v.name} (${v.lang})`;
+    voiceSel.appendChild(opt);
+  });
+}
+function findSelectedVoice(){
+  const name = voiceSel.value;
+  if(!name) return null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v=>v.name===name) || null;
+}
+function speak(text, slow=false){
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  const v = findSelectedVoice() || pickChineseVoices()[0];
+  if(v) u.voice = v;
+  const rateMap = {"0.8":0.8,"1.0":1.0,"1.2":1.2};
+  u.rate = slow ? 0.8 : (rateMap[rateSel.value] || 1.0);
+  speechSynthesis.speak(u);
+}
+
+// その行だけ3秒表示
+const peekTimers = {};
+function peek(idx){
+  const el = document.getElementById(`card-${idx}`);
+  if(!el) return;
+  el.classList.add('show');
+  clearTimeout(peekTimers[idx]);
+  peekTimers[idx] = setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+// 検索
+q.addEventListener('input', render);
+
+// 訳の表示/非表示（ローカル保存 & 学習モード切替）
+const savedPref = localStorage.getItem('showTrans');
+if(savedPref !== null){
+  const on = savedPref === 'true';
+  toggleTrans.checked = on;
+  document.body.classList.toggle('study', !on);
+}
+toggleTrans.addEventListener('change', () => {
+  const on = toggleTrans.checked;
+  document.body.classList.toggle('study', !on);
+  localStorage.setItem('showTrans', String(on));
+});
+
+/* 4) 初期化：CSVを読み込み→マージ→描画 */
+(async function init(){
+  const extra = await loadExtraCSV('phrases_extra.csv'); // ←アップしたCSV名
+  PHRASES = mergeAndDedupe(BASE_PHRASES, extra);
+  renderCats(); render();
+  if(typeof speechSynthesis!=='undefined'){ populateVoiceSelector(); speechSynthesis.onvoiceschanged=populateVoiceSelector; }
+})();
+</script>
+  
 const list = document.getElementById('list');
 const catsDiv = document.getElementById('cats');
 const q = document.getElementById('q');
