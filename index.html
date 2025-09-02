@@ -25,7 +25,7 @@
 
   /* 学習モード（訳を隠す） */
   .study .jaen{display:none}
-  /* 学習モードの時だけ「チラ見せ」ボタンを出す */
+  /* 学習モードの時だけ「訳を見る」ボタンを出す */
   .peek{display:none}
   .study .peek{display:inline-block}
   /* チラ見せ中のカードは訳を表示 */
@@ -141,7 +141,7 @@ function render(){
         <div class="controls">
           <button class="btn" onclick="speak('${p.zh.replace(/'/g,"\\'")}')">再生</button>
           <button class="btn" onclick="speak('${p.zh.replace(/'/g,"\\'")}', true)">ゆっくり</button>
-          <button class="btn peek" onclick="peek(${idx})">チラ見せ</button>
+          <button class="btn peek" onclick="peek(${idx})">訳を見る</button>
         </div>`;
       list.appendChild(div);
     });
