@@ -1,4 +1,4 @@
-カテゴリ,中国語,ピンイン,日本語,英語
+﻿カテゴリ,中国語,ピンイン,日本語,英語
 数字・お金,一,yī,1,one
 数字・お金,二,èr,2,two
 数字・お金,三,sān,3,three
@@ -82,3 +82,52 @@
 天気・自然,下雪,xià xuě,雪,snow
 天気・自然,热,rè,暑い,hot
 天気・自然,冷,lěng,寒い,cold
+体調・感情,我渴了,wǒ kě le,喉が渇いた,I'm thirsty
+体調・感情,我困了,wǒ kùn le,眠い／眠くなった,I'm sleepy
+体調・感情,我肚子疼,wǒ dùzi téng,お腹が痛い,My stomach hurts
+体調・感情,我醒了,wǒ xǐng le,起きたよ,I woke up
+体調・感情,我怕,wǒ pà,怖い,I'm scared
+体調・感情,我吃饱了,wǒ chī bǎo le,お腹いっぱい,I'm full
+依頼・お願い,再来一次,zài lái yí cì,もう一回,One more time
+依頼・お願い,需要我帮你吗？,xūyào wǒ bāng nǐ ma?,手伝おうか？,Do you need my help?
+依頼・お願い,听话,tīnghuà,言うことを聞いて,Listen / Be obedient
+依頼・お願い,选一个,xuǎn yí gè,1つ選んで,Choose one
+依頼・お願い,小声一点,xiǎo shēng yìdiǎn,もうちょっと静かに,Keep your voice down
+依頼・お願い,快去睡觉,kuài qù shuìjiào,早く寝なさい,Go to bed soon
+欲求・希望,我想吃这个,wǒ xiǎng chī zhège,これ食べたい,I want to eat this
+欲求・希望,我还要一个,wǒ hái yào yí gè,もう1個欲しい,I want one more
+欲求・希望,我想看电视,wǒ xiǎng kàn diànshì,テレビが見たい,I want to watch TV
+欲求・希望,我想吃零食,wǒ xiǎng chī língshí,お菓子が食べたい,I want to eat snacks
+欲求・希望,我可以…吗？,wǒ kěyǐ … ma?,〜してもいい？,May I …?
+欲求・希望,我想你,wǒ xiǎng nǐ,会いたい／恋しい,I miss you
+所有・順番,这是我的吗？,zhè shì wǒ de ma?,これ私の？,Is this mine?
+所有・順番,轮到我了,lúndào wǒ le,私の番,It's my turn
+所有・順番,轮到你了,lúndào nǐ le,あなたの番,It's your turn
+生活・支度,该起床了,gāi qǐchuáng le,起きる時間だ,Time to get up
+生活・支度,去洗脸刷牙吧,qù xǐliǎn shuāyá ba,洗顔と歯磨きしておいで,Go wash your face and brush your teeth
+生活・支度,快到出门的时间了,kuài dào chūmén de shíjiān le,もうすぐ出かける時間だ,It's almost time to go
+生活・支度,你准备好了吗？,nǐ zhǔnbèi hǎo le ma?,準備できた？,Are you ready?
+生活・支度,该做…的时间了,gāi zuò … de shíjiān le,〜する時間だよ,It's time to …
+生活・支度,我要上厕所,wǒ yào shàng cèsuǒ,トイレに行きたい,I need to go to the bathroom
+生活・支度,你去哪儿？,nǐ qù nǎr?,どこ行くの？,Where are you going?
+思考・学び,怎么了？,zěnme le?,どうしたの？,What's wrong?
+思考・学び,想不起来,xiǎng bù qǐlái,思い出せない,I can't recall
+思考・学び,我忘了,wǒ wàng le,忘れちゃった,I forgot
+思考・学び,自己决定,zìjǐ juédìng,自分で決めなさい,Decide for yourself
+思考・学び,我支持你,wǒ zhīchí nǐ,応援するよ,I support you
+思考・学び,我会了,wǒ huì le,できるようになった,I can do it now / I learned it
+思考・学び,我相信你,wǒ xiāngxìn nǐ,信じてるよ,I believe in you
+思考・学び,为什么？,wèishénme?,なんで？,Why?
+思考・学び,我该怎么办？,wǒ gāi zěnme bàn?,どうしたらいい？,What should I do?
+思考・学び,这是什么？,zhè shì shénme?,これは何？,What is this?
+思考・学び,还要多久？,hái yào duōjiǔ?,あとどれくらい？,How much longer?
+思考・学び,你觉得呢？,nǐ juéde ne?,どう思う？,What do you think?
+マナー・ペース,慢慢吃,mànman chī,ゆっくり食べて,Eat slowly
+マナー・ペース,别急，慢慢来,"bié jí, mànman lái",焦らないで／ゆっくりでいいよ,"Don't rush, take your time"
+マナー・ペース,当然不行,dāngrán bù xíng,だめに決まってる,Of course not
+褒め言葉,真乖,zhēn guāi,いい子だね,Such a good kid
+褒め言葉,真懂事,zhēn dǒngshì,物分かりがいいね,So considerate / mature
+褒め言葉,没关系的,méi guānxi de,大丈夫だよ,It's okay
+褒め言葉,你一定可以的,nǐ yídìng kěyǐ de,あなたならできるよ,You can do it
+進路・拒否,我不想去（学校）,wǒ bù xiǎng qù (xuéxiào),行きたくない（学校）,I don't want to go (to school)
+追加,还不想睡,hái bù xiǎng shuì,まだ眠くない,Not sleepy yet
