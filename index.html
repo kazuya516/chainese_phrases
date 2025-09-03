@@ -43,6 +43,10 @@
     <option value="1.2">少し速く</option>
   </select>
   <label><input type="checkbox" id="toggleTrans" checked> 訳を表示</label>
+  <button id="playAllBtn" class="btn">全体を再生</button>
+　<button id="playCatBtn" class="btn">このカテゴリを再生</button>
+　<button id="playSearchBtn" class="btn">検索結果を再生</button>
+　<button id="stopBtn" class="btn">停止</button>
 </div>
 
 <div class="cats" id="cats"></div>
@@ -157,5 +161,95 @@ toggleTrans.addEventListener('change', () => { const on=toggleTrans.checked; doc
   if(typeof speechSynthesis!=='undefined'){ populateVoiceSelector(); speechSynthesis.onvoiceschanged=populateVoiceSelector; }
 })();
 /* ---- ここまでJS ---- */
+/* ====== 一括再生（全体／カテゴリ／検索結果） ====== */
+let isPlaying = false;
+let playIndex = 0;
+let playQueue = [];
+
+// いま選ばれている音声と話速を取得
+function currentVoiceAndRate(){
+  const vs = speechSynthesis.getVoices();
+  const pickChinese = vs.filter(v=>/zh/i.test(v.lang));
+  const voice = (voiceSel.value ? vs.find(v=>v.name===voiceSel.value) : (pickChinese[0] || vs[0])) || null;
+  const map = {"0.8":0.8,"1.0":1.0,"1.2":1.2};
+  const rate = map[rateSel.value] || 1.0;
+  return {voice, rate};
+}
+
+// 単発の Utterance を作る（queue 再生で使う）
+function makeUtterance(text, voice, rate){
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  if (voice) u.voice = voice;
+  u.rate = rate;
+  return u;
+}
+
+// 現在のフィルタ（カテゴリ＋検索）を適用したリストを返す
+function getFilteredList(){
+  const keyword = q.value.trim().toLowerCase();
+  return PHRASES
+    .filter(p => activeCat === "すべて" || p.c === activeCat)
+    .filter(p => !keyword || [p.zh, p.py, p.ja, p.en].join(" ").toLowerCase().includes(keyword));
+}
+function getCategoryOnlyList(){
+  return PHRASES.filter(p => activeCat === "すべて" || p.c === activeCat);
+}
+
+// 再生ループ
+function playList(items){
+  if(!items || !items.length) return; // 空は無視
+  speechSynthesis.cancel(); // 念のため停止
+  isPlaying = true;
+  playQueue = items.map(p => p.zh); // 中国語本文で再生
+  playIndex = 0;
+  const {voice, rate} = currentVoiceAndRate();
+  const speakNext = ()=>{
+    if(!isPlaying || playIndex >= playQueue.length){
+      stopPlaying();
+      return;
+    }
+    const u = makeUtterance(playQueue[playIndex], voice, rate);
+    u.onend = ()=>{ playIndex++; setTimeout(speakNext, 120); }; // 次へ（少し間をあける）
+    u.onerror = ()=>{ playIndex++; setTimeout(speakNext, 120); };
+    speechSynthesis.speak(u);
+  };
+  speakNext();
+  updatePlayButtons();
+}
+
+function stopPlaying(){
+  speechSynthesis.cancel();
+  isPlaying = false;
+  playQueue = [];
+  playIndex = 0;
+  updatePlayButtons();
+}
+
+// ボタンの有効/無効
+function updatePlayButtons(){
+  const disable = isPlaying;
+  const byId = id => document.getElementById(id);
+  ['playAllBtn','playCatBtn','playSearchBtn'].forEach(id=>{
+    const el = byId(id);
+    if(el){ el.disabled = disable; }
+  });
+  const stopEl = byId('stopBtn');
+  if(stopEl){ stopEl.disabled = !isPlaying; }
+}
+
+// クリックイベント
+const playAllBtn = document.getElementById('playAllBtn');
+const playCatBtn = document.getElementById('playCatBtn');
+const playSearchBtn = document.getElementById('playSearchBtn');
+const stopBtn = document.getElementById('stopBtn');
+
+if(playAllBtn) playAllBtn.onclick = ()=> playList(PHRASES);
+if(playCatBtn) playCatBtn.onclick = ()=> playList(getCategoryOnlyList());
+if(playSearchBtn) playSearchBtn.onclick = ()=> playList(getFilteredList());
+if(stopBtn) stopBtn.onclick = stopPlaying;
+
+// 検索やカテゴリ切替時に、再生中なら止める（ズレ防止）
+q.addEventListener('input', ()=>{ if(isPlaying) stopPlaying(); });
 </script>
 </html>
